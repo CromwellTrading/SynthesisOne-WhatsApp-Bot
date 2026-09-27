@@ -1,0 +1,28 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SynthesisOne WhatsApp Test Bridge",
+    "version": "1.0.0"
+  },
+  "servers": [{"url": "https://YOUR-RENDER-SERVICE.onrender.com"}],
+  "paths": {
+    "/health": {"get": {"summary": "Health check"}},
+    "/webhook/synthesisone": {
+      "post": {
+        "summary": "Receive SynthesisOne webhook",
+        "parameters": [
+          {"in":"header","name":"X-Webhook-Event-Id","schema":{"type":"string"}},
+          {"in":"header","name":"X-Webhook-Timestamp","schema":{"type":"string"}},
+          {"in":"header","name":"X-Webhook-Signature","schema":{"type":"string"}},
+          {"in":"header","name":"X-Webhook-Signature-V2","schema":{"type":"string"}}
+        ],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type":"object"}}}},
+        "responses": {"200":{"description":"Delivered"},"202":{"description":"Accepted without delivery"},"401":{"description":"Invalid signature"}}
+      }
+    },
+    "/api/admin/status": {"get":{"summary":"Admin status"}},
+    "/api/admin/qr": {"get":{"summary":"Get current QR as data URL"}},
+    "/api/admin/pairing-code": {"post":{"summary":"Generate WhatsApp pairing code"}},
+    "/api/admin/send-test": {"post":{"summary":"Send a test WhatsApp message"}}
+  }
+}

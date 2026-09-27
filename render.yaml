@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: synthesisone-whatsapp
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: ADMIN_SECRET
+        generateValue: true
+      - key: SYNTHESISONE_WEBHOOK_SECRET
+        generateValue: true
+      - key: WHATSAPP_DEFAULT_COUNTRY_CODE
+        value: "53"
+      - key: WHATSAPP_AUTH_DIR
+        value: /var/data/.wwebjs_auth
+      - key: DATA_DIR
+        value: /var/data/data
+      - key: WHATSAPP_CLIENT_ID
+        value: synthesisone
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /usr/bin/chromium
+      - key: WEBHOOK_TIMESTAMP_TOLERANCE_SEC
+        value: "300"
+      - key: MAX_WEBHOOK_BODY_BYTES
+        value: "131072"
+      - key: LICENSE_PRICE_AMOUNT
+        value: "28000"
+      - key: LICENSE_CURRENCY
+        value: CUP
+      - key: LICENSE_RECEIVER_ACCOUNTS
+        sync: false
+      - key: CUBA_ONLY_RECIPIENTS
+        value: "false"
+    disk:
+      name: whatsapp-session
+      mountPath: /var/data
+      sizeGB: 1

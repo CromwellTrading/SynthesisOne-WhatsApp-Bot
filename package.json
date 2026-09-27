@@ -1,0 +1,21 @@
+{
+  "name": "synthesisone-whatsapp-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Puente de prueba SynthesisOne -> WhatsApp para validar webhooks de transferencias.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && node --check src/server.js && node --check src/whatsapp.js && node --check src/security.js && node --check src/store.js && node --check src/format.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "express": "^4.21.2",
+    "helmet": "^8.1.0",
+    "qrcode": "^1.5.4",
+    "whatsapp-web.js": "1.34.7"
+  }
+}
