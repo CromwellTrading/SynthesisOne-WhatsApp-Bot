@@ -15,6 +15,41 @@ function csv(value) {
     .filter(Boolean)
 }
 
+function normalizeSupabaseUrl(raw) {
+  const input = String(raw || '').trim()
+  if (!input) throw new Error('Falta SUPABASE_URL')
+
+  let url
+  try {
+    url = new URL(input)
+  } catch {
+    throw new Error('SUPABASE_URL inválida. Debe ser la Project URL, por ejemplo: https://TU-PROYECTO.supabase.co')
+  }
+
+  if (!/^https?:$/.test(url.protocol)) {
+    throw new Error('SUPABASE_URL inválida. Debe comenzar con https://')
+  }
+
+  const pathValue = url.pathname.replace(/\/+$/, '')
+  const removableSuffixes = ['/rest/v1', '/storage/v1', '/auth/v1']
+  for (const suffix of removableSuffixes) {
+    if (pathValue === suffix) {
+      url.pathname = '/'
+      url.search = ''
+      url.hash = ''
+      return url.toString().replace(/\/$/, '')
+    }
+  }
+
+  if (pathValue !== '') {
+    throw new Error('SUPABASE_URL contiene una ruta adicional. Usa solamente la Project URL de Supabase, sin /rest/v1, /storage/v1, /auth/v1 ni /dashboard/...')
+  }
+
+  url.search = ''
+  url.hash = ''
+  return url.toString().replace(/\/$/, '')
+}
+
 function loadConfig() {
   const encryptionHex = requiredAny('WHATSAPP_SESSION_ENCRYPTION_KEY').toLowerCase()
   if (!/^[0-9a-f]{64}$/.test(encryptionHex)) {
@@ -31,7 +66,7 @@ function loadConfig() {
     port,
     adminSecret: requiredAny('ADMIN_SECRET'),
     webhookSecret: requiredAny('SYNTHESISONE_WEBHOOK_SECRET'),
-    supabaseUrl: requiredAny('SUPABASE_URL'),
+    supabaseUrl: normalizeSupabaseUrl(requiredAny('SUPABASE_URL')),
     supabaseKey: requiredAny('SUPABASE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE_KEY'),
     storageBucket: String(process.env.SUPABASE_STORAGE_BUCKET || 'whatsapp-sessions').trim(),
     sessionEncryptionKey: Buffer.from(encryptionHex, 'hex'),
@@ -52,4 +87,4 @@ function loadConfig() {
   }
 }
 
-module.exports = { loadConfig }
+module.exports = { loadConfig, normalizeSupabaseUrl }
