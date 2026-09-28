@@ -1,14 +1,16 @@
 {
   "name": "synthesisone-whatsapp-bot",
-  "version": "2.0.0",
+  "version": "2.3.0",
   "private": true,
-  "description": "Puente SynthesisOne -> WhatsApp con RemoteAuth cifrado en Supabase y wakeup por Render Cron.",
+  "description": "Puente SynthesisOne -> WhatsApp con RemoteAuth cifrado en Supabase, diagnóstico profundo de WhatsApp Web y registro persistente del panel.",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "check": "node --check src/config.js && node --check src/supabase.js && node --check src/remoteSessionStore.js && node --check src/eventStore.js && node --check src/security.js && node --check src/format.js && node --check src/keepalive.js && node --check src/whatsapp.js && node --check src/server.js && node --check src/index.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",
     "dotenv": "17.2.2",
