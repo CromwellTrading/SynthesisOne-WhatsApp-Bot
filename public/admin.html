@@ -1,17 +1,127 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SynthesisOne WhatsApp</title><style>
-body{font-family:system-ui,sans-serif;background:#08111f;color:#eef5ff;margin:0;padding:18px}.box{max-width:900px;margin:auto}.card{background:#111d31;border:1px solid #263653;border-radius:18px;padding:18px;margin-bottom:16px}input,textarea,button{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid #385071;padding:12px;background:#0a1526;color:#fff;margin-top:8px}button{cursor:pointer;font-weight:700;background:#18385e}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.status{font-family:monospace;white-space:pre-wrap;word-break:break-word}.qr{max-width:320px;background:#fff;padding:10px;border-radius:12px;display:block;margin:10px auto}@media(max-width:700px){.grid{grid-template-columns:1fr}}</style></head><body><div class="box">
-<div class="card"><h1>SynthesisOne → WhatsApp</h1><p>Panel de prueba del webhook.</p><input id="secret" type="password" placeholder="ADMIN_SECRET"><button onclick="save()">Guardar acceso</button></div>
-<div class="grid"><div class="card"><h2>Estado</h2><div id="status" class="status">Cargando…</div><button onclick="refresh()">Actualizar</button><button onclick="restartWa()">🔄 Reiniciar conexión (sin borrar sesión)</button></div>
-<div class="card"><h2>Vincular WhatsApp</h2><img id="qr" class="qr" alt="QR" style="display:none"><button onclick="loadQr()">Mostrar QR</button><hr><input id="waPhone" placeholder="Número con código de país, ej. 5351234567"><button onclick="pair()">Generar código por número</button><div id="pairing" class="status"></div></div></div>
-<div class="card"><h2>Mensaje de prueba</h2><input id="testPhone" placeholder="Número destino"><textarea id="testMsg" rows="5">✅ Prueba de SynthesisOne WhatsApp.</textarea><button onclick="sendTest()">Enviar prueba</button><div id="result" class="status"></div></div>
-<div class="card"><h2>Eventos</h2><div id="events" class="status"></div></div></div>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SynthesisOne WhatsApp — Diagnóstico</title>
+  <style>
+    body{font-family:system-ui,sans-serif;background:#08111f;color:#eef5ff;margin:0;padding:18px}
+    .box{max-width:1100px;margin:auto}.card{background:#111d31;border:1px solid #263653;border-radius:18px;padding:18px;margin-bottom:16px}
+    input,textarea,button{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid #385071;padding:12px;background:#0a1526;color:#fff;margin-top:8px}
+    button{cursor:pointer;font-weight:700;background:#18385e}.danger{background:#5e2020}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .status{font-family:monospace;white-space:pre-wrap;word-break:break-word}.qr{max-width:320px;background:#fff;padding:10px;border-radius:12px;display:block;margin:10px auto}
+    .logbox{height:520px;overflow:auto;background:#050b14;border:1px solid #263653;border-radius:12px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+    .hint{color:#a9b9d2;font-size:13px}.row{display:flex;gap:8px}.row button{flex:1}.pill{display:inline-block;border-radius:999px;padding:4px 9px;margin:2px;font-size:12px;background:#18385e}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.row{flex-direction:column}.logbox{height:430px}}
+  </style>
+</head>
+<body>
+<div class="box">
+  <div class="card">
+    <h1>SynthesisOne → WhatsApp</h1>
+    <p>Panel de prueba y diagnóstico profundo de la conexión WhatsApp Web.</p>
+    <input id="secret" type="password" placeholder="ADMIN_SECRET">
+    <button onclick="save()">Guardar acceso</button>
+    <div class="hint">Los diagnósticos que ves aquí se guardan también en el almacenamiento local del navegador, por lo que no desaparecen al recargar esta página.</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Estado actual</h2>
+      <div id="badges"></div>
+      <div id="status" class="status">Cargando…</div>
+      <div class="row">
+        <button onclick="refresh()">Actualizar ahora</button>
+        <button onclick="restartWa()">🔄 Reiniciar conexión</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Vincular WhatsApp</h2>
+      <img id="qr" class="qr" alt="QR" style="display:none">
+      <button onclick="loadQr()">Mostrar QR actual</button>
+      <hr>
+      <input id="waPhone" placeholder="Número con código de país, ej. 5351234567">
+      <button onclick="pair()">Generar código por número</button>
+      <div id="pairing" class="status"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔎 Registro de diagnóstico</h2>
+    <p class="hint">Se registran QR, código, estados internos, authenticated, ready, disconnected, auth_failure, RemoteAuth/Storage, navegador Chromium, errores de página y solicitudes fallidas. No se guarda el QR ni secretos.</p>
+    <div class="row">
+      <button onclick="copyLogs()">📋 Copiar diagnóstico</button>
+      <button onclick="downloadLogs()">⬇️ Guardar JSON</button>
+      <button class="danger" onclick="clearLocalLogs()">🗑️ Borrar historial local</button>
+    </div>
+    <div id="logMeta" class="hint" style="margin:10px 0"></div>
+    <div id="diagnostics" class="logbox">Cargando diagnóstico…</div>
+  </div>
+
+  <div class="card">
+    <h2>Mensaje de prueba</h2>
+    <input id="testPhone" placeholder="Número destino">
+    <textarea id="testMsg" rows="5">✅ Prueba de SynthesisOne WhatsApp.</textarea>
+    <button onclick="sendTest()">Enviar prueba</button>
+    <div id="result" class="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>Eventos de webhook</h2>
+    <div id="events" class="status"></div>
+  </div>
+</div>
+
 <script>
-function key(){return sessionStorage.getItem('admin_secret')||document.getElementById('secret').value.trim()}function save(){const k=document.getElementById('secret').value.trim();if(k){sessionStorage.setItem('admin_secret',k);refresh()}}
+const LOG_KEY='synthesisone_wa_diagnostic_logs_v3';
+let latestLogs=[];
+function key(){return sessionStorage.getItem('admin_secret')||document.getElementById('secret').value.trim()}
+function save(){const k=document.getElementById('secret').value.trim();if(k){sessionStorage.setItem('admin_secret',k);refresh()}}
+function loadLocal(){try{const v=JSON.parse(localStorage.getItem(LOG_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}
+function persistLocal(logs){try{localStorage.setItem(LOG_KEY,JSON.stringify(logs.slice(-1500)))}catch(e){console.warn('No se pudo guardar localmente:',e)}}
+function mergeLogs(serverLogs){
+  const map=new Map();
+  for(const x of loadLocal()) if(x&&x.id) map.set(x.id,x);
+  for(const x of (serverLogs||[])) if(x&&x.id) map.set(x.id,x);
+  latestLogs=Array.from(map.values()).sort((a,b)=>String(a.at).localeCompare(String(b.at))).slice(-1500);
+  persistLocal(latestLogs); renderLogs();
+}
+function formatLog(x){
+  const data=x.data===undefined?'':`\n    data=${JSON.stringify(x.data)}`;
+  return `${x.at||''} [${x.level||'INFO'}] ${x.event||'log'}${x.message?' | '+x.message:''}${data}`;
+}
+function renderLogs(){
+  const el=document.getElementById('diagnostics');
+  const visible=latestLogs.slice().reverse().map(formatLog).join('\n\n');
+  el.textContent=visible||'Todavía no hay diagnósticos.';
+  document.getElementById('logMeta').textContent=`${latestLogs.length} registros conservados en este navegador. Los más recientes aparecen arriba.`;
+}
 async function api(url,opt={}){opt.headers=Object.assign({'Content-Type':'application/json','X-Admin-Secret':key()},opt.headers||{});const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
-async function refresh(){try{const j=await api('/api/admin/status');document.getElementById('status').textContent=JSON.stringify({whatsapp:j.whatsapp,remoteSession:j.remoteSession},null,2);document.getElementById('events').textContent=JSON.stringify(j.recentEvents,null,2)}catch(e){document.getElementById('status').textContent=e.message}}
-async function restartWa(){try{await api('/api/admin/restart',{method:'POST'});setTimeout(refresh,1500)}catch(e){alert(e.message)}}
+function renderState(w){
+  const badges=[];
+  badges.push(`<span class="pill">status=${w.status}</span>`);
+  badges.push(`<span class="pill">authenticated=${w.authenticated}</span>`);
+  badges.push(`<span class="pill">ready=${w.ready}</span>`);
+  badges.push(`<span class="pill">waState=${w.whatsappState||'—'}</span>`);
+  badges.push(`<span class="pill">remote=${w.remoteSessionExists}</span>`);
+  document.getElementById('badges').innerHTML=badges.join(' ');
+  document.getElementById('status').textContent=JSON.stringify(w,null,2);
+}
+async function refresh(){
+  try{
+    const j=await api('/api/admin/status');
+    renderState(j.whatsapp); document.getElementById('events').textContent=JSON.stringify(j.recentEvents,null,2); mergeLogs(j.diagnosticLogs||[]);
+  }catch(e){document.getElementById('status').textContent=e.message; mergeLogs([])}
+}
 async function loadQr(){try{const j=await api('/api/admin/qr');const img=document.getElementById('qr');img.src=j.dataUrl;img.style.display='block'}catch(e){alert(e.message)}}
 async function pair(){try{const j=await api('/api/admin/pairing-code',{method:'POST',body:JSON.stringify({phone_number:document.getElementById('waPhone').value})});document.getElementById('pairing').textContent='Código: '+j.code}catch(e){document.getElementById('pairing').textContent=e.message}}
-async function sendTest(){try{const j=await api('/api/admin/send-test',{method:'POST',body:JSON.stringify({phone_number:document.getElementById('testPhone').value,message:document.getElementById('testMsg').value})});document.getElementById('result').textContent=JSON.stringify(j,null,2)}catch(e){document.getElementById('result').textContent=e.message}}
-refresh();setInterval(refresh,10000)
-</script></body></html>
+async function restartWa(){try{await api('/api/admin/restart',{method:'POST'});setTimeout(refresh,1500);setTimeout(refresh,6000)}catch(e){alert(e.message)}}
+async function sendTest(){try{const j=await api('/api/admin/send-test',{method:'POST',body:JSON.stringify({phone_number:document.getElementById('testPhone').value,message:document.getElementById('testMsg').value})});document.getElementById('result').textContent=JSON.stringify(j,null,2);refresh()}catch(e){document.getElementById('result').textContent=e.message;refresh()}}
+async function copyLogs(){try{await navigator.clipboard.writeText(latestLogs.map(formatLog).join('\n\n'));alert('Diagnóstico copiado')}catch(e){alert('No se pudo copiar: '+e.message)}}
+function downloadLogs(){const blob=new Blob([JSON.stringify(latestLogs,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='synthesisone-whatsapp-diagnostics.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+async function clearLocalLogs(){if(!confirm('¿Borrar solamente el historial guardado en este navegador?'))return;localStorage.removeItem(LOG_KEY);latestLogs=[];renderLogs()}
+mergeLogs([]);refresh();setInterval(refresh,5000);
+</script>
+</body>
+</html>
