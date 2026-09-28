@@ -1,30 +1,17 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SynthesisOne WhatsApp</title>
-<style>
-body{font-family:system-ui,-apple-system,sans-serif;background:#08111f;color:#eef5ff;margin:0;padding:20px}.box{max-width:900px;margin:auto}.card{background:#111d31;border:1px solid #263653;border-radius:18px;padding:18px;margin-bottom:16px}input,textarea,button{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid #385071;padding:12px;background:#0a1526;color:#fff;margin-top:8px}button{cursor:pointer;font-weight:700;background:#18385e}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.status{font-family:monospace;white-space:pre-wrap}.qr{max-width:320px;background:white;padding:12px;border-radius:12px;display:block;margin:12px auto}@media(max-width:700px){.grid{grid-template-columns:1fr}}
-</style>
-</head>
-<body><div class="box">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SynthesisOne WhatsApp</title><style>
+body{font-family:system-ui,sans-serif;background:#08111f;color:#eef5ff;margin:0;padding:18px}.box{max-width:900px;margin:auto}.card{background:#111d31;border:1px solid #263653;border-radius:18px;padding:18px;margin-bottom:16px}input,textarea,button{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid #385071;padding:12px;background:#0a1526;color:#fff;margin-top:8px}button{cursor:pointer;font-weight:700;background:#18385e}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.status{font-family:monospace;white-space:pre-wrap;word-break:break-word}.qr{max-width:320px;background:#fff;padding:10px;border-radius:12px;display:block;margin:10px auto}@media(max-width:700px){.grid{grid-template-columns:1fr}}</style></head><body><div class="box">
 <div class="card"><h1>SynthesisOne → WhatsApp</h1><p>Panel de prueba del webhook.</p><input id="secret" type="password" placeholder="ADMIN_SECRET"><button onclick="save()">Guardar acceso</button></div>
-<div class="grid">
-<div class="card"><h2>Estado</h2><div id="status" class="status">Cargando…</div><button onclick="refresh()">Actualizar</button></div>
-<div class="card"><h2>Vincular WhatsApp</h2><p>QR:</p><img id="qr" class="qr" alt="QR" style="display:none"><button onclick="loadQr()">Mostrar QR</button><hr><p>O código por número:</p><input id="waPhone" placeholder="Ej. 5355555555"><button onclick="pair()">Generar código</button><div id="pairing" class="status"></div></div>
-</div>
-<div class="card"><h2>Mensaje de prueba</h2><input id="testPhone" placeholder="Número destino, ej. 5355555555"><textarea id="testMsg" rows="5">✅ Prueba de SynthesisOne WhatsApp.</textarea><button onclick="sendTest()">Enviar prueba</button><div id="result" class="status"></div></div>
-<div class="card"><h2>Eventos recientes</h2><div id="events" class="status"></div></div>
-</div>
+<div class="grid"><div class="card"><h2>Estado</h2><div id="status" class="status">Cargando…</div><button onclick="refresh()">Actualizar</button><button onclick="restartWa()">🔄 Reiniciar conexión (sin borrar sesión)</button></div>
+<div class="card"><h2>Vincular WhatsApp</h2><img id="qr" class="qr" alt="QR" style="display:none"><button onclick="loadQr()">Mostrar QR</button><hr><input id="waPhone" placeholder="Número con código de país, ej. 5351234567"><button onclick="pair()">Generar código por número</button><div id="pairing" class="status"></div></div></div>
+<div class="card"><h2>Mensaje de prueba</h2><input id="testPhone" placeholder="Número destino"><textarea id="testMsg" rows="5">✅ Prueba de SynthesisOne WhatsApp.</textarea><button onclick="sendTest()">Enviar prueba</button><div id="result" class="status"></div></div>
+<div class="card"><h2>Eventos</h2><div id="events" class="status"></div></div></div>
 <script>
-function key(){return sessionStorage.getItem('admin_secret')||document.getElementById('secret').value.trim()}
-function save(){const k=document.getElementById('secret').value.trim();if(k){sessionStorage.setItem('admin_secret',k);refresh()}}
+function key(){return sessionStorage.getItem('admin_secret')||document.getElementById('secret').value.trim()}function save(){const k=document.getElementById('secret').value.trim();if(k){sessionStorage.setItem('admin_secret',k);refresh()}}
 async function api(url,opt={}){opt.headers=Object.assign({'Content-Type':'application/json','X-Admin-Secret':key()},opt.headers||{});const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
-async function refresh(){try{const j=await api('/api/admin/status');document.getElementById('status').textContent=JSON.stringify(j.whatsapp,null,2);document.getElementById('events').textContent=JSON.stringify(j.recentEvents,null,2)}catch(e){document.getElementById('status').textContent=e.message}}
+async function refresh(){try{const j=await api('/api/admin/status');document.getElementById('status').textContent=JSON.stringify({whatsapp:j.whatsapp,remoteSession:j.remoteSession},null,2);document.getElementById('events').textContent=JSON.stringify(j.recentEvents,null,2)}catch(e){document.getElementById('status').textContent=e.message}}
+async function restartWa(){try{await api('/api/admin/restart',{method:'POST'});setTimeout(refresh,1500)}catch(e){alert(e.message)}}
 async function loadQr(){try{const j=await api('/api/admin/qr');const img=document.getElementById('qr');img.src=j.dataUrl;img.style.display='block'}catch(e){alert(e.message)}}
 async function pair(){try{const j=await api('/api/admin/pairing-code',{method:'POST',body:JSON.stringify({phone_number:document.getElementById('waPhone').value})});document.getElementById('pairing').textContent='Código: '+j.code}catch(e){document.getElementById('pairing').textContent=e.message}}
 async function sendTest(){try{const j=await api('/api/admin/send-test',{method:'POST',body:JSON.stringify({phone_number:document.getElementById('testPhone').value,message:document.getElementById('testMsg').value})});document.getElementById('result').textContent=JSON.stringify(j,null,2)}catch(e){document.getElementById('result').textContent=e.message}}
-if(sessionStorage.getItem('admin_secret')){document.getElementById('secret').value='••••••••'}refresh();setInterval(refresh,10000)
-</script>
-</body></html>
+refresh();setInterval(refresh,10000)
+</script></body></html>
