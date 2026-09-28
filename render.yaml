@@ -10,6 +10,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "22"
       - key: PORT
         value: "10000"
       - key: ADMIN_SECRET
@@ -59,6 +61,8 @@ services:
     buildCommand: npm install --omit=optional
     startCommand: node src/keepalive.js
     envVars:
+      - key: NODE_VERSION
+        value: "22"
       - key: KEEPALIVE_TARGET_URL
         fromService:
           type: web
